@@ -63,7 +63,6 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
                     feats = np.fromstring(output.split('\n')[1], sep=" ")
                     color_data.append(feats)
 
-                    print np.max(fixdepth)
                     depthcolor = (cm.get_cmap('gist_heat')(1-fixdepth)[:,:,:3]*255)[:,:,::-1]
                     depthcolor[~depthmask]=np.array([22,45,18])
                     depthcolor_resize = smartResize(depthcolor, 231, (22,45,18)).astype('uint8')
