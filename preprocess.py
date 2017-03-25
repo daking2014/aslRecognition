@@ -49,11 +49,10 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
                 bandless_img = img[:-1]/2 + img[1:]/2
                 bandless_img = bandless_img.astype('float') / 255.0
 
-                depth = cv2.imread(depth_path,cv2.IMREAD_UNCHANGED)
+                depth = cv2.imread(depth_path,cv2.IMREAD_UNCHANGED).astype('float')
                 pc = np.percentile(depth[depth>0],.05)
                 depthmask = (depth>0)&(depth<100+pc)
-                fixdepth = (depth - np.min(depth[depth>0]))*depthmask
-                fixdepth = fixdepth.astype('float') / 100.0
+                fixdepth = (1 - (depth - np.min(depth[depth>0]))/100.0)*depthmask
 
                 if overfeat is not None:
                     bandless_resize = smartResize(bandless_img, 231, (1,1,1))
@@ -63,7 +62,7 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
                     feats = np.fromstring(output.split('\n')[1], sep=" ")
                     color_data.append(feats)
 
-                    depthcolor = (cm.get_cmap('gist_heat')(1-fixdepth)[:,:,:3]*255)[:,:,::-1]
+                    depthcolor = (cm.get_cmap('gist_heat')(fixdepth)[:,:,:3]*255)[:,:,::-1]
                     depthcolor[~depthmask]=np.array([22,45,18])
                     depthcolor_resize = smartResize(depthcolor, 231, (22,45,18)).astype('uint8')
                     cv2.imwrite('tmp_img.png',depthcolor_resize)
