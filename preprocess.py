@@ -3,6 +3,8 @@ import cv2
 import os
 import argparse
 import itertools
+import subprocess
+import matplotlib.cm as cm
 
 def padTo(img, w,h, value):
     ih,iw = img.shape[:2]
@@ -21,7 +23,7 @@ def smartResize(img, sidelen, value):
         imethod = cv2.INTER_LINEAR
     return cv2.resize(padded,(sidelen, sidelen), interpolation=imethod) 
 
-def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy"):
+def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=None):
     
     color_data = []
     depth_data = []
@@ -46,17 +48,35 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy"):
                 img = cv2.imread(color_path,cv2.IMREAD_COLOR)
                 bandless_img = img[:-1]/2 + img[1:]/2
                 bandless_img = bandless_img.astype('float') / 255.0
-                bandless_resize = smartResize(bandless_img, 128, (1,1,1))
-
-                color_data.append(bandless_resize.flatten())
 
                 depth = cv2.imread(depth_path,cv2.IMREAD_UNCHANGED)
-                depthmask = (depth>0)&(depth<100+np.percentile(depth[depth>0],.05))
-                fixdepth = (np.max(depth[depthmask]) - depth)*depthmask
+                pc = np.percentile(depth[depth>0],.05)
+                depthmask = (depth>0)&(depth<100+pc)
+                fixdepth = (depth - np.min(depth[depth>0]))*depthmask
                 fixdepth = fixdepth.astype('float') / 100.0
-                fixdepth_resize = smartResize(fixdepth, 128, 0)
 
-                depth_data.append(fixdepth_resize.flatten())
+                if overfeat is not None:
+                    bandless_resize = smartResize(bandless_img, 231, (1,1,1))
+                    bandless_resize = (bandless_resize*255).astype('uint8')
+                    cv2.imwrite('tmp_img.png',bandless_resize)
+                    output = subprocess.check_output([overfeat,'-f','tmp_img.png'], universal_newlines=True)
+                    feats = np.fromstring(output.split('\n')[1], sep=" ")
+                    color_data.append(feats)
+
+                    print np.max(fixdepth)
+                    depthcolor = (cm.get_cmap('gist_heat')(1-fixdepth)[:,:,:3]*255)[:,:,::-1]
+                    depthcolor[~depthmask]=np.array([22,45,18])
+                    depthcolor_resize = smartResize(depthcolor, 231, (22,45,18)).astype('uint8')
+                    cv2.imwrite('tmp_img.png',depthcolor_resize)
+                    output = subprocess.check_output([overfeat,'-f','tmp_img.png'], universal_newlines=True)
+                    feats = np.fromstring(output.split('\n')[1], sep=" ")
+                    depth_data.append(feats)
+
+                else:
+                    bandless_resize = smartResize(bandless_img, 128, (1,1,1))
+                    color_data.append(bandless_resize.flatten())
+                    fixdepth_resize = smartResize(fixdepth, 128, 0)
+                    depth_data.append(fixdepth_resize.flatten())
 
                 label_data.append(li)
                 person_data.append(pi)
@@ -79,6 +99,7 @@ parser = argparse.ArgumentParser(description='Preprocess ASL images')
 parser.add_argument('datadir', help='Dataset directory')
 parser.add_argument('outfile', help='Output file')
 parser.add_argument('--letters', help='Letters to include')
+parser.add_argument('--overfeat', help='Path to overfeat')
 
 if __name__ == '__main__':
     namespace = parser.parse_args()
