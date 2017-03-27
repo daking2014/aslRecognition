@@ -2,6 +2,8 @@ import numpy as np
 import skimage.filters as filters
 import scipy.signal as signal
 import scipy.ndimage as ndimage
+import cv2
+import argparse
 
 def apply_kernels(data, kernels, crop=True):
     """
@@ -61,16 +63,57 @@ def apply_gaussian_kernels(data, sigmas):
     result = np.stack(parts, axis=-1)
     return result
 
-def process_demo(data):
-    data1 = expand_data(data)
-    data2 = apply_gabor_kernels(data1, [0.05], 3)
-    data3 = apply_gaussian_kernels(data2, [20, 40])
-    data3p = np.concatenate([data2[...,np.newaxis], data3], axis=-1)
-    data4 = flatten_data(data3p)
-    return data4
+def process_gabor_scales(data):
 
-def expand_data(data):
-    return data.reshape((data.shape[0], 128, 128, -1))
+    cdata = expand_data(data) # n x 128 x 128 x d
+    cres = None
+    for scale in range(3):
+        gabored = apply_gabor_kernels(cdata, [0.1], 4) # n x 128 x 128 x d x 4
+        gabored_flat = gabored.reshape(gabored.shape[:-2] + (-1,))
+        if cres is None:
+            cres = gabored_flat
+        else:
+            gauss = apply_gaussian_kernels(cres, [2])
+            gauss = gauss.reshape(gauss.shape[:-2] + (-1,))
+            cres = np.concatenate([gauss, gabored_flat], axis=-1)
+
+        cdata = resize_data(cdata, cdata.shape[1]/2)
+        cres = resize_data(cres, cres.shape[1]/2)
+
+    return flatten_data(cres)
+
+def expand_data(data, w=128):
+    return data.reshape((data.shape[0], w, w, -1))
 
 def flatten_data(data):
     return data.reshape((data.shape[0],-1))
+
+def resize_data(data, w):
+    n,origw,_,d = data.shape
+    print "orig", data.shape
+    to_resize = data.transpose((1,2,0,3)).reshape((origw,origw,-1))
+    print "before resize", to_resize.shape
+    resized = np.empty((w,w,n*d))
+    for i in range(n*d):
+        resized[:,:,i] = cv2.resize(to_resize[:,:,i],(w,w),interpolation=cv2.INTER_AREA)
+    print "after resize", resized.shape
+    print "desired", (w,w,n,d)
+    return resized.reshape((w,w,n,d)).transpose((2,0,1,3))
+
+def main(preprocessed, outfile, key):
+    zfile = np.load(preprocessed)
+    data = zfile[key]
+    processed = process_gabor_scales(data)
+    processed = processed*10 # Scale up features to be approximately [0,1]
+    print "Processed data -> shape", processed.shape
+    np.save(outfile, processed)
+
+parser = argparse.ArgumentParser(description='Apply Gabor filters to the depth of a thing')
+parser.add_argument('preprocessed', help='Preprocessed image zip file')
+parser.add_argument('outfile', help='File to write')
+parser.add_argument('--key', default="depth", help='Key to access')
+
+if __name__ == '__main__':
+    namespace = parser.parse_args()
+    args = vars(namespace)
+    main(**args)
