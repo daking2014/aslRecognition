@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 
+import cv2
+
 import numpy as np
+
+from sklearn import metrics
 
 def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
     """
@@ -76,3 +80,13 @@ def cvPerformance(clf, XTrain, yTrain, peopleTrain):
         scores.append(performance)
 
     return np.array(scores).mean()
+
+def resizeImages(originalSideLen, resizeFactor, X):
+    n, _ = X.shape
+    XShrunkDepth = []
+    for i in range(n):
+        example = X[i, :]
+        sizedExample = np.reshape(example, (originalSideLen, originalSideLen))
+        resizedExample = cv2.resize(sizedExample, (0,0), fx=resizeFactor, fy=resizeFactor)
+        XShrunkDepth.append(resizedExample.flatten())
+    return np.array(XShrunkDepth)

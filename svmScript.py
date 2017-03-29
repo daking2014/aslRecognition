@@ -1,5 +1,7 @@
 import argparse
 
+import cv2
+
 import itertools
 
 import matplotlib.pyplot as plt
@@ -18,7 +20,7 @@ def selectParamLinear(XTrain, yTrain, peopleTrain):
     bestPerformance = 0
     for c in CRange:
         clf = SVC(kernel='linear', C=c)
-        performance = cvPerformance(clf, XTrain, yTrain, peopleTrain)
+        performance = util.cvPerformance(clf, XTrain, yTrain, peopleTrain)
         print "C = " + str(c) + ", accuracy = " + str(performance)
         if performance > bestPerformance:
             bestPerformance = performance
@@ -35,7 +37,7 @@ def selectParamRBF(XTrain, yTrain, peopleTrain):
     for gamma in gammaRange:
         for c in CRange:
             clf = SVC(kernel='rbf', C=c, gamma=gamma)
-            score = cvPerformance(clf, XTrain, yTrain, peopleTrain)
+            score = util.cvPerformance(clf, XTrain, yTrain, peopleTrain)
             print "gamma = " + str(gamma) + ", C = " + str(c) + ", accuracy = " + str(score)
             if score > bestPerformance:
                 bestPerformance = score
@@ -43,9 +45,9 @@ def selectParamRBF(XTrain, yTrain, peopleTrain):
 
     return bestTuple
 
-
 def main(dataFile):
     color, depth, labels, people = util.loadData(dataFile)
+    plt.imshow(np.reshape(depth[0, :], (128, 128)))
 
     n, colorFeatures = color.shape
     _, depthFeatures = depth.shape
@@ -55,6 +57,8 @@ def main(dataFile):
     XColorAndDepth = np.concatenate((color, depth), axis=1)
     XDepth = depth
     XColor = color
+    XShrunkDepth = util.resizeImages(128, 0.2, depth)
+    print XShrunkDepth.shape
     y = labels
 
     XTrainColor, XTestColor, yTrainColor, yTestColor, peopleTrainColor, peopleTestColor = util.leaveOnePersonOut(3, XColor, y, people)
@@ -62,6 +66,8 @@ def main(dataFile):
     XTrainDepth, XTestDepth, yTrainDepth, yTestDepth, peopleTrainDepth, peopleTestDepth = util.leaveOnePersonOut(3, XDepth, y, people)
 
     XTrainColorAndDepth, XTestColorAndDepth, yTrainColorAndDepth, yTestColorAndDepth, peopleTrainColorAndDepth, peopleTestColorAndDepth = util.leaveOnePersonOut(3, XColorAndDepth, y, people)
+
+    XTrainShrunkDepth, XTestShrunkDepth, yTrainShrunkDepth, yTestShrunkDepth, peopleTrainShrunkDepth, peopleTestShrunkDepth = util.leaveOnePersonOut(3, XShrunkDepth, y, people)
 
     # print "Selecting linear parameters for just color"
     # c = selectParamLinear(XTrainColor, yTrainColor, peopleTrainColor)
@@ -103,6 +109,14 @@ def main(dataFile):
     # score = metrics.accuracy_score(yTestDepth, yPred)
     # print "Selected C = " + str(c) + ", gamma = " + str(gamma) + ", accuracy = " + str(score)
 
+    print "Selecting rbf parameters for just shrunken depth"
+    gamma, c = selectParamRBF(XTrainShrunkDepth, yTrainShrunkDepth, peopleTrainShrunkDepth)
+    clf = SVC(kernel='rbf', C=c, gamma=gamma)
+    clf.fit(XTrainShrunkDepth, yTrainShrunkDepth)
+    yPred = clf.predict(XTestShrunkDepth)
+    score = metrics.accuracy_score(yTestShrunkDepth, yPred)
+    print "Selected C = " + str(c) + ", gamma = " + str(gamma) + ", accuracy = " + str(score)
+
     # print "Selecting rbf parameters for color and depth"
     # gamma, c = selectParamRBF(XTrainColorAndDepth, yTrainColorAndDepth, peopleTrainColorAndDepth)
     # clf = SVC(kernel='rbf', C=c, gamma=gamma)
@@ -111,17 +125,17 @@ def main(dataFile):
     # score = metrics.accuracy_score(yTestColorAndDepth, yPred)
     # print "Selected C = " + str(c) + ", gamma = " + str(gamma) + ", accuracy = " + str(score)
 
-    print "Fitting linear SVC with C=1"
-    linearClf = SVC(kernel='rbf', C=100, gamma=0.0001)
-    linearClf.fit(XTrainDepth, yTrainDepth)
-    yPred = linearClf.predict(XTestDepth)
-    score = metrics.accuracy_score(yTestDepth, yPred)
-    cm = metrics.confusion_matrix(yTestDepth, yPred)
-    plt.figure()
-    print cm
-    util.plotConfusionMatrix(cm, classes=np.unique(yTestDepth).tolist(),title="Confusion Matrix")
-    print "Score: " + str(score)
-    plt.show()
+    # print "Fitting linear SVC with C=1"
+    # linearClf = SVC(kernel='rbf', C=100, gamma=0.0001)
+    # linearClf.fit(XTrainDepth, yTrainDepth)
+    # yPred = linearClf.predict(XTestDepth)
+    # score = metrics.accuracy_score(yTestDepth, yPred)
+    # cm = metrics.confusion_matrix(yTestDepth, yPred)
+    # plt.figure()
+    # print cm
+    # util.plotConfusionMatrix(cm, classes=np.unique(yTestDepth).tolist(),title="Confusion Matrix")
+    # print "Score: " + str(score)
+    # plt.show()
 
     # shrink depth
     # depth + nnnet
