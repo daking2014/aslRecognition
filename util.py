@@ -103,3 +103,33 @@ def resizeImages(originalSideLen, resizeFactor, X):
     X = X.reshape((X.shape[0], originalSideLen, originalSideLen, -1))
     Xresized = resizeData(X, int(originalSideLen*resizeFactor))
     return Xresized.reshape((X.shape[0],-1))
+
+def getFeaturesFromSpecs(primaryDataFile, featureSpecs):
+    primaryData = np.load(primaryDataFile)
+    allFeatures = []
+    for source in featureSpecs:
+        name = source
+        if "@" in name:
+            name, scalestr = name.split("@")
+            scale = float(scalestr)
+        else:
+            scale = 1.0
+        if "[" in name:
+            name, key = name[:-1].split("[")
+        else:
+            key = None
+        if name is "":
+            # Use primary data
+            curData = primaryData
+        else:
+            # Load a file
+            curData = np.load(name)
+        if key is not None:
+            curData = curData[key]
+        if scale != 1.0:
+            curData = resizeImages(128, scale, curData)
+        print "Source ", source, " processed: shape ", curData.shape
+        allFeatures.append(curData)
+    X = np.concatenate(allFeatures, 1)
+    return X
+

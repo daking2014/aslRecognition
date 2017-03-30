@@ -12,6 +12,7 @@ from sklearn.utils import shuffle
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.externals import joblib
 
 import scipy.stats
 
@@ -89,7 +90,7 @@ def selectParamKNN(XTrain, yTrain, peopleTrain):
 
     return bestK
 
-def main(dataFile, model, featureSpecs, plot_cm=True):
+def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
     """
     dataFile should be the path to a file with keys "label" and "person"
     dataSpecs should be a list of data specs, which are strings of one of these forms:
@@ -108,31 +109,7 @@ def main(dataFile, model, featureSpecs, plot_cm=True):
     labels = primaryData['label']
     people = primaryData['person']
 
-    allFeatures = []
-    for source in featureSpecs:
-        name = source
-        if "@" in name:
-            name, scalestr = name.split("@")
-            scale = float(scalestr)
-        else:
-            scale = 1.0
-        if "[" in name:
-            name, key = name[:-1].split("[")
-        else:
-            key = None
-        if name is "":
-            # Use primary data
-            curData = primaryData
-        else:
-            # Load a file
-            curData = np.load(name)
-        if key is not None:
-            curData = curData[key]
-        if scale != 1.0:
-            curData = util.resizeImages(128, scale, curData)
-        print "Source ", source, " processed: shape ", curData.shape
-        allFeatures.append(curData)
-    X = np.concatenate(allFeatures, 1)
+    X = util.getFeaturesFromSpecs(dataFile, featureSpecs)
     n, d = X.shape
     print "Total shape:", X.shape
 
@@ -176,12 +153,18 @@ def main(dataFile, model, featureSpecs, plot_cm=True):
         util.plotConfusionMatrix(cm, classes=np.unique(yTest).tolist(),title="Confusion Matrix")
         plt.show()
 
+    if save is not None:
+        joblib.dump({"clf":clf,"featureSpecs":featureSpecs},save)
+        print "Saved to", save
+
 
 parser = argparse.ArgumentParser(description='Run SVM')
 parser.add_argument('dataFile', help='Main data file')
 parser.add_argument('model', choices=['SVMlinear', 'SVMrbf', 'RF', 'LogReg', 'knn'], help='Model type')
 parser.add_argument('featureSpecs', metavar="SPEC", nargs='+', help='Specifications for features to train on')
 parser.add_argument('--disable-cm', dest='plot_cm', action='store_false', help='Do not plot a confusion matrix')
+parser.add_argument('--save', help='File to save trained classifier to')
+
 
 if __name__ == '__main__':
     namespace = parser.parse_args()
