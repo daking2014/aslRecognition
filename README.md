@@ -25,3 +25,17 @@
 - SVC(kernel=rbf, C=10, gamma=0.0001, best for color), color: 0.67
 - SVC(kernel=rbf, C=10, gamma=0.0001, best for depth), depth: 0.88
 - SVC(kernel=rbf, C=10, gamma=0.00001, best for color and depth), color and depth: 0.84
+
+### Performance with additional classifiers and features (bcmnw)
+- KNN(k=3) depth (scaled 0.2): 0.86
+- KNN(k=9) gabor: 0.84
+- KNN(k=3) depth (0.2 scale) + gabor: 0.85
+- SVC(kernel=linear, C=0.1) gabor: 0.88
+- SVC(kernel=linear, C=0.1) depth (0.2 scale) + gabor: 0.95
+- SVC(kernel=rbf, C=10, gamma=0.01) depth (0.2 scale) + gabor: 0.96
+- LogReg(C=1.0,multinomial) depth (0.2 scale): 0.80
+- LogReg(C=1.0,multinomial) gabor: 0.86
+- LogReg(C=1.0,multinomial) gabor + depth (0.2 scale): 0.91
+- RF('max_features': 0.28704608069377779, 'n_estimators': 19, 'max_depth': 8) overfeat: 0.76
+- RF('max_features': 0.46912474635711165, 'n_estimators': 15, 'max_depth': 6) gabor: 0.76
+- RF('max_features': 0.25839424397640276, 'n_estimators': 17, 'max_depth': 8) depth (0.2 scale): 0.53
