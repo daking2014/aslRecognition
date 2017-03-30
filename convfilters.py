@@ -4,6 +4,7 @@ import scipy.signal as signal
 import scipy.ndimage as ndimage
 import cv2
 import argparse
+from util import resizeData
 
 def apply_kernels(data, kernels, crop=True):
     """
@@ -77,8 +78,8 @@ def process_gabor_scales(data):
             gauss = gauss.reshape(gauss.shape[:-2] + (-1,))
             cres = np.concatenate([gauss, gabored_flat], axis=-1)
 
-        cdata = resize_data(cdata, cdata.shape[1]/2)
-        cres = resize_data(cres, cres.shape[1]/2)
+        cdata = resizeData(cdata, cdata.shape[1]/2)
+        cres = resizeData(cres, cres.shape[1]/2)
 
     return flatten_data(cres)
 
@@ -87,18 +88,6 @@ def expand_data(data, w=128):
 
 def flatten_data(data):
     return data.reshape((data.shape[0],-1))
-
-def resize_data(data, w):
-    n,origw,_,d = data.shape
-    print "orig", data.shape
-    to_resize = data.transpose((1,2,0,3)).reshape((origw,origw,-1))
-    print "before resize", to_resize.shape
-    resized = np.empty((w,w,n*d))
-    for i in range(n*d):
-        resized[:,:,i] = cv2.resize(to_resize[:,:,i],(w,w),interpolation=cv2.INTER_AREA)
-    print "after resize", resized.shape
-    print "desired", (w,w,n,d)
-    return resized.reshape((w,w,n,d)).transpose((2,0,1,3))
 
 def main(preprocessed, outfile, key):
     zfile = np.load(preprocessed)

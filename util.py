@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 from sklearn import metrics
+import itertools
 
 def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
     """
@@ -81,12 +82,24 @@ def cvPerformance(clf, XTrain, yTrain, peopleTrain):
 
     return np.array(scores).mean()
 
+def leaveOnePersonOutSplits(people):
+    splits = []
+    for i in np.unique(people):
+        splits.append((people != i, people == i))
+    return splits
+
+def resizeData(data, w):
+    """
+    data: array of shape (n,origw,origw,d)
+    """
+    n,origw,_,d = data.shape
+    to_resize = data.transpose((1,2,0,3)).reshape((origw,origw,-1))
+    resized = np.empty((w,w,n*d))
+    for i in range(n*d):
+        resized[:,:,i] = cv2.resize(to_resize[:,:,i],(w,w),interpolation=cv2.INTER_AREA)
+    return resized.reshape((w,w,n,d)).transpose((2,0,1,3))
+
 def resizeImages(originalSideLen, resizeFactor, X):
-    n, _ = X.shape
-    XShrunkDepth = []
-    for i in range(n):
-        example = X[i, :]
-        sizedExample = np.reshape(example, (originalSideLen, originalSideLen))
-        resizedExample = cv2.resize(sizedExample, (0,0), fx=resizeFactor, fy=resizeFactor)
-        XShrunkDepth.append(resizedExample.flatten())
-    return np.array(XShrunkDepth)
+    X = X.reshape((X.shape[0], originalSideLen, originalSideLen, -1))
+    Xresized = resizeData(X, int(originalSideLen*resizeFactor))
+    return Xresized.reshape((X.shape[0],-1))
