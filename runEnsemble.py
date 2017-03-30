@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import util
+import argparse
 
 from sklearn import metrics
 from sklearn.svm import SVC
@@ -12,20 +13,57 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.externals import joblib
 
-ENSEMBLE_FOLDER = 'classifiersForEnsemble'
-DATA_FILE = 'bcmnw.npz'
-GABOR_FILE = 'gabor_bcmnw.npy'
-OVERFEAT_FILE = 'overfeat_bcmnw.npz'
 
-def main():
+
+def probability_votes(clfs, specs, specMap, n_test, targets):
+    totalPredictions = np.zeros((n_test, len(targets)))
+    for i in range(len(clfs)):
+        spec = str(specs[i])
+        data = specMap[spec]
+        predictions = clfs[i].predict_proba(data[0])
+        totalPredictions = np.add(totalPredictions, predictions)
+
+    yPred = []
+    for i in range(n_test):
+        predictions = totalPredictions[i, :]
+        classIndex = predictions.argmax(axis=0)
+        yPred.append(targets[classIndex])
+    return yPred
+
+def majority_votes(clfs, specs, specMap, n_test, targets):
+    """
+    preds: (num_clf,n_test) of best candidates
+    Ties are broken by first classifier
+    """
+    num_clf = len(clfs)
+    # Compute votes
+    preds = np.empty((num_clf,n_test))
+    for i,(clf,spec) in enumerate(zip(clfs,specs)):
+        X_test = specMap[str(spec)]
+        preds[i,:] = clf.predict(X_test)
+    # Find out which things got votes
+    all_votes = np.empty((num_clf,n_test,len(targets)))
+    for i,target in enumerate(targets):
+        all_votes[:,:,i] = (preds == target)
+    # Give preference to first classifier
+    all_votes[0,:,:] *= 1.01
+    # Add up the votes for each target
+    nvotes = np.sum(all_votes,0) # of shape (n_test, len(targets))
+    # Get the best target
+    y_pred_idx = np.argmax(nvotes, 1) # of shape (n_test,)
+    y_pred = targets[y_pred_idx]
+    return y_pred
+
+def main(ensemble_folder='classifiersForEnsemble', data_file='bcmnw.npz', majority=False):
     classifiers = []
     specs = []
-    for filename in os.listdir(ENSEMBLE_FOLDER):
-        clf = joblib.load(ENSEMBLE_FOLDER + "\\" + filename)
+    for filename in os.listdir(ensemble_folder):
+        clf = joblib.load(os.path.join(ensemble_folder, filename))
         classifiers.append(clf["clf"])
         specs.append(clf["featureSpecs"])
+        print "Loaded classifier ", filename
 
-    primaryData = np.load(DATA_FILE)
+    primaryData = np.load(data_file)
     labels = primaryData['label']
     people = primaryData['person']
 
@@ -33,27 +71,17 @@ def main():
     specsToTestData = {}
     for spec in specs:
         if not specsToTestData.has_key(str(spec)):
-            data = util.getFeaturesFromSpecs(DATA_FILE, spec)
+            data = util.getFeaturesFromSpecs(data_file, spec)
             _, XTest, _, yTest, _, _ = util.leaveOnePersonOut(3, data, labels, people)
             specsToTestData[str(spec)] = [XTest, yTest]
 
-            if sampleDatay == None:
+            if sampleDatay is None:
                 sampleDatay = yTest
 
-    totalPredictions = np.zeros((len(sampleDatay), len(np.unique(sampleDatay))))
-    for i in range(len(classifiers)):
-        spec = str(specs[i])
-        data = specsToTestData[spec]
-        predictions = classifiers[i].predict_proba(data[0])
-        totalPredictions = np.add(totalPredictions, predictions)
-
-    # HARDCODED CLASS MAPPING
-    classMapping = {0:1, 1:2, 2:12, 3:13, 4:22 }
-    yPred = []
-    for i in range(len(sampleDatay)):
-        predictions = totalPredictions[i, :]
-        classIndex = predictions.argmax(axis=0)
-        yPred.append(classMapping[classIndex])
+    if majority:
+        yPred = majority_votes(classifiers, specs, specsToTestData, len(sampleDatay), np.unique(sampleDatay))
+    else:
+        yPred = probability_votes(classifiers, specs, specsToTestData, len(sampleDatay), np.unique(sampleDatay))
 
     score = metrics.accuracy_score(sampleDatay, yPred)
     print "Accuracy:", score
@@ -64,6 +92,10 @@ def main():
     util.plotConfusionMatrix(cm, classes=np.unique(sampleDatay).tolist(),title="Confusion Matrix")
     plt.show()
 
+parser = argparse.ArgumentParser(description='Run SVM')
+parser.add_argument('--ensemble-folder', help='Ensemble folder')
+parser.add_argument('--data-file', help='Data file')
+parser.add_argument('--majority', action='store_true', help='Use majority voting')
 
 if __name__ == '__main__':
     main()
