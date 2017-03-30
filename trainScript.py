@@ -137,6 +137,7 @@ def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
     elif model == "knn":
         k = selectParamKNN(XTrain, yTrain, peopleTrain)
         clf = KNeighborsClassifier(k)
+        print "Selected k = ", k
     else:
         raise ValueError("Bad model " + model)
     
