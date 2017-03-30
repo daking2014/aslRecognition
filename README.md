@@ -39,3 +39,8 @@
 - RF('max_features': 0.28704608069377779, 'n_estimators': 19, 'max_depth': 8) overfeat: 0.76
 - RF('max_features': 0.46912474635711165, 'n_estimators': 15, 'max_depth': 6) gabor: 0.76
 - RF('max_features': 0.25839424397640276, 'n_estimators': 17, 'max_depth': 8) depth (0.2 scale): 0.53
+
+### Ensemble Performance
+
+So far only found one ensemble that improves at all:
+- LogRegOverfeat, SVMLinearDepth03Gabor, SVMRBFLinearDepth03Gabor: 0.963

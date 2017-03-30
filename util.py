@@ -9,6 +9,7 @@ import itertools
 
 def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
     """
+    http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """

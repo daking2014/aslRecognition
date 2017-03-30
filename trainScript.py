@@ -17,7 +17,7 @@ from sklearn.externals import joblib
 import scipy.stats
 
 def selectParamSVMLinear(XTrain, yTrain, peopleTrain):
-    CRange = 10.0**np.arange(-4,0)
+    CRange = 10.0**np.arange(-4,2)
     bestC = 0
     bestPerformance = 0
     for c in CRange:
@@ -67,7 +67,7 @@ def selectParamLogReg(XTrain, yTrain, peopleTrain):
     bestC = 0
     bestPerformance = 0
     for c in CRange:
-        clf = LogisticRegression(C=c,multi_class="multinomial",solver="sag")
+        clf = LogisticRegression(C=c,multi_class="multinomial",solver="sag", max_iter=1000)
         performance = util.cvPerformance(clf, XTrain, yTrain, peopleTrain)
         print "C = " + str(c) + ", accuracy = " + str(performance)
         if performance > bestPerformance:
@@ -120,11 +120,11 @@ def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
     if model == "SVMlinear":
         print "Selecting linear parameters"
         c = selectParamSVMLinear(XTrain, yTrain, peopleTrain)
-        clf = SVC(kernel='linear', C=c)
+        clf = SVC(kernel='linear', C=c, probability=True)
         print "Selected C = " + str(c)
     elif model == "SVMrbf":
         gamma, c = selectParamSVMRBF(XTrain, yTrain, peopleTrain)
-        clf = SVC(kernel='rbf', C=c, gamma=gamma)
+        clf = SVC(kernel='rbf', C=c, gamma=gamma, probability=True)
         print "Selected C = " + str(c) + ", gamma = " + str(gamma)
     elif model == "RF":
         paramDict = selectParamRandomForest(XTrain, yTrain, peopleTrain)
@@ -132,7 +132,7 @@ def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
         print "Selected parameters ", paramDict
     elif model == "LogReg":
         c = selectParamLogReg(XTrain, yTrain, peopleTrain)
-        clf = LogisticRegression(C=c,multi_class="multinomial",solver="sag")
+        clf = LogisticRegression(C=c,multi_class="multinomial",solver="sag", max_iter=1000)
         print "Selected C = " + str(c)
     elif model == "knn":
         k = selectParamKNN(XTrain, yTrain, peopleTrain)
@@ -140,7 +140,7 @@ def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
         print "Selected k = ", k
     else:
         raise ValueError("Bad model " + model)
-    
+
     clf.fit(XTrain, yTrain)
 
     yPred = clf.predict(XTest)
