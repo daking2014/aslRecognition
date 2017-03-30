@@ -5,6 +5,7 @@ import scipy.ndimage as ndimage
 import cv2
 import argparse
 from util import resizeData
+import gc
 
 def apply_kernels(data, kernels, crop=True):
     """
@@ -92,8 +93,13 @@ def flatten_data(data):
 def main(preprocessed, outfile, key):
     zfile = np.load(preprocessed)
     data = zfile[key]
-    processed = process_gabor_scales(data)
-    processed = processed*10 # Scale up features to be approximately [0,1]
+    procs = []
+    for i in range(0,data.shape[0],10):
+        processed = process_gabor_scales(data[i:i+10])
+        processed = processed*10 # Scale up features to be approximately [0,1]
+        procs.append(processed)
+        gc.collect()
+    processed = np.concatenate(procs,0)
     print "Processed data -> shape", processed.shape
     np.save(outfile, processed)
 
