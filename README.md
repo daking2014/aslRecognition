@@ -44,3 +44,19 @@
 
 So far only found one ensemble that improves at all:
 - LogRegOverfeat, SVMLinearDepth03Gabor, SVMRBFLinearDepth03Gabor: 0.963
+
+### Performance on all letters
+- SVC(kernel=rbf, C = 100.0, gamma = 0.01) depth@0.3 gabor: 0.64
+- SVC(kernel=linear, C = 10) depth@0.3 gabor: 0.65
+- SVC(kernel=linear, C = 0.01) overfeat[depth]: 0.69
+- SVC(kernel=rbf, C = 100, gamma = 0.0001) overfeat[depth]: 0.70
+- Ensemble of
+    + SVC(kernel=linear, C = 10) depth@0.3 gabor
+    + SVC(kernel=linear, C = 0.01) overfeat[depth]
+  had performance: 0.73
+- Ensemble of
+    + SVC(kernel=rbf, C = 100.0, gamma = 0.01) depth@0.3 gabor: 0.64
+    + SVC(kernel=linear, C = 10) depth@0.3 gabor: 0.65
+    + SVC(kernel=linear, C = 0.01) overfeat[depth]: 0.69
+    + SVC(kernel=rbf, C = 100, gamma = 0.0001) overfeat[depth]: 0.70
+  had performance: 0.74
