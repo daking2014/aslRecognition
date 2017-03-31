@@ -39,7 +39,7 @@ def majority_votes(clfs, specs, specMap, n_test, targets):
     # Compute votes
     preds = np.empty((num_clf,n_test))
     for i,(clf,spec) in enumerate(zip(clfs,specs)):
-        X_test = specMap[str(spec)]
+        X_test, _ = specMap[str(spec)]
         preds[i,:] = clf.predict(X_test)
     # Find out which things got votes
     all_votes = np.empty((num_clf,n_test,len(targets)))
@@ -54,7 +54,7 @@ def majority_votes(clfs, specs, specMap, n_test, targets):
     y_pred = targets[y_pred_idx]
     return y_pred
 
-def main(ensemble_folder='classifiersForEnsemble', data_file='bcmnw.npz', majority=False):
+def main(ensemble_folder, data_file, majority=False):
     classifiers = []
     specs = []
     for filename in os.listdir(ensemble_folder):
@@ -93,8 +93,8 @@ def main(ensemble_folder='classifiersForEnsemble', data_file='bcmnw.npz', majori
     plt.show()
 
 parser = argparse.ArgumentParser(description='Run SVM')
-parser.add_argument('--ensemble-folder', help='Ensemble folder')
-parser.add_argument('--data-file', help='Data file')
+parser.add_argument('--ensemble-folder', default='classifiersForEnsemble', help='Ensemble folder')
+parser.add_argument('--data-file', default='bcmnw.npz', help='Data file')
 parser.add_argument('--majority', action='store_true', help='Use majority voting')
 
 if __name__ == '__main__':
