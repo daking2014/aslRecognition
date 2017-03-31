@@ -26,6 +26,7 @@ def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion matrix', 
     else:
         print('Confusion matrix, without normalization')
 
+    print("   " + "  ".join(str(c) for c in classes))
     print(cm)
 
     thresh = cm.max() / 2.

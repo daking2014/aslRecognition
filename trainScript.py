@@ -151,7 +151,7 @@ def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
     print cm
     if plot_cm:
         plt.figure()
-        util.plotConfusionMatrix(cm, classes=np.unique(yTest).tolist(),title="Confusion Matrix")
+        util.plotConfusionMatrix(cm, classes=[chr(ord('a')+c) for c in np.unique(yTest)],title="Confusion Matrix")
         plt.show()
 
     if save is not None:

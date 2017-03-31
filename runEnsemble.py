@@ -89,7 +89,7 @@ def main(ensemble_folder, data_file, majority=False):
     cm = metrics.confusion_matrix(sampleDatay, yPred)
     print cm
     plt.figure()
-    util.plotConfusionMatrix(cm, classes=np.unique(sampleDatay).tolist(),title="Confusion Matrix")
+    util.plotConfusionMatrix(cm, classes=[chr(ord('a')+c) for c in np.unique(yTest)],title="Confusion Matrix")
     plt.show()
 
 parser = argparse.ArgumentParser(description='Run SVM')
