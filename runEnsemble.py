@@ -98,4 +98,6 @@ parser.add_argument('--data-file', help='Data file')
 parser.add_argument('--majority', action='store_true', help='Use majority voting')
 
 if __name__ == '__main__':
-    main()
+    namespace = parser.parse_args()
+    args = vars(namespace)
+    main(**args)
