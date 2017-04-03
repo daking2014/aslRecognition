@@ -54,7 +54,7 @@ def majority_votes(clfs, specs, specMap, n_test, targets):
     y_pred = targets[y_pred_idx]
     return y_pred
 
-def main(ensemble_folder, data_file, majority=False):
+def main(ensemble_folder, data_file, leave_out, majority=False):
     classifiers = []
     specs = []
     for filename in os.listdir(ensemble_folder):
@@ -72,7 +72,7 @@ def main(ensemble_folder, data_file, majority=False):
     for spec in specs:
         if not specsToTestData.has_key(str(spec)):
             data = util.getFeaturesFromSpecs(data_file, spec)
-            _, XTest, _, yTest, _, _ = util.leaveOnePersonOut(3, data, labels, people)
+            _, XTest, _, yTest, _, _ = util.leaveOnePersonOut(leave_out, data, labels, people)
             specsToTestData[str(spec)] = [XTest, yTest]
 
             if sampleDatay is None:
@@ -96,6 +96,7 @@ parser = argparse.ArgumentParser(description='Run SVM')
 parser.add_argument('--ensemble-folder', default='classifiersForEnsemble', help='Ensemble folder')
 parser.add_argument('--data-file', default='bcmnw.npz', help='Data file')
 parser.add_argument('--majority', action='store_true', help='Use majority voting')
+parser.add_argument('--leave-out', type=int, default=3, help='Index of person to leave out')
 
 if __name__ == '__main__':
     namespace = parser.parse_args()

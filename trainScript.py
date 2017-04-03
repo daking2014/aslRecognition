@@ -90,7 +90,7 @@ def selectParamKNN(XTrain, yTrain, peopleTrain):
 
     return bestK
 
-def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
+def main(dataFile, model, featureSpecs, leave_out, plot_cm=True, save=None):
     """
     dataFile should be the path to a file with keys "label" and "person"
     dataSpecs should be a list of data specs, which are strings of one of these forms:
@@ -115,7 +115,7 @@ def main(dataFile, model, featureSpecs, plot_cm=True, save=None):
 
     X, y, people = shuffle(X, labels, people, random_state=0)
 
-    XTrain, XTest, yTrain, yTest, peopleTrain, peopleTest = util.leaveOnePersonOut(3, X, y, people)
+    XTrain, XTest, yTrain, yTest, peopleTrain, peopleTest = util.leaveOnePersonOut(leave_out, X, y, people)
 
     if model == "SVMlinear":
         print "Selecting linear parameters"
@@ -165,6 +165,7 @@ parser.add_argument('model', choices=['SVMlinear', 'SVMrbf', 'RF', 'LogReg', 'kn
 parser.add_argument('featureSpecs', metavar="SPEC", nargs='+', help='Specifications for features to train on')
 parser.add_argument('--disable-cm', dest='plot_cm', action='store_false', help='Do not plot a confusion matrix')
 parser.add_argument('--save', help='File to save trained classifier to')
+parser.add_argument('--leave-out', type=int, default=3, help='Index of person to leave out')
 
 
 if __name__ == '__main__':
