@@ -143,15 +143,26 @@ def main(dataFile, model, featureSpecs, leave_out, plot_cm=True, save=None):
 
     clf.fit(XTrain, yTrain)
 
-    yPred = clf.predict(XTest)
-    score = metrics.accuracy_score(yTest, yPred)
-    print "Accuracy:", score
+    yPred = clf.predict(XTrain)
+    score = metrics.accuracy_score(yTrain, yPred)
+    print "Training Accuracy:", score
 
-    cm = metrics.confusion_matrix(yTest, yPred)
-    print cm
+    cm = metrics.confusion_matrix(yTrain, yPred)
     if plot_cm:
         plt.figure()
-        util.plotConfusionMatrix(cm, classes=[chr(ord('a')+c) for c in np.unique(yTest)],title="Confusion Matrix")
+    util.plotConfusionMatrix(cm, classes=[chr(ord('a')+c) for c in np.unique(yTrain)],title="Confusion Matrix", plot=plot_cm)
+    if plot_cm:
+        plt.show()
+
+    yPred = clf.predict(XTest)
+    score = metrics.accuracy_score(yTest, yPred)
+    print "Test Accuracy:", score
+
+    cm = metrics.confusion_matrix(yTest, yPred)
+    if plot_cm:
+        plt.figure()
+    util.plotConfusionMatrix(cm, classes=[chr(ord('a')+c) for c in np.unique(yTest)],title="Confusion Matrix", plot=plot_cm)
+    if plot_cm:
         plt.show()
 
     if save is not None:
