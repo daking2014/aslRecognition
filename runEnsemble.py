@@ -13,15 +13,20 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.externals import joblib
 
+from show_performance import topKAccuracy
 
-
-def probability_votes(clfs, specs, specMap, n_test, targets):
+def probability_scores(clfs, specs, specMap, n_test, targets):
     totalPredictions = np.zeros((n_test, len(targets)))
     for i in range(len(clfs)):
         spec = str(specs[i])
         data = specMap[spec]
         predictions = clfs[i].predict_proba(data[0])
         totalPredictions = np.add(totalPredictions, predictions)
+
+    return totalPredictions
+
+def probability_votes(clfs, specs, specMap, n_test, targets):
+    totalPredictions = probability_scores(clfs, specs, specMap, n_test, targets)
 
     yPred = []
     for i in range(n_test):
@@ -54,7 +59,7 @@ def majority_votes(clfs, specs, specMap, n_test, targets):
     y_pred = targets[y_pred_idx]
     return y_pred
 
-def main(ensemble_folder, data_file, leave_out, plot_cm, majority=False):
+def main(ensemble_folder, data_file, leave_out, plot_cm, k, majority=False):
     classifiers = []
     specs = []
     for filename in os.listdir(ensemble_folder):
@@ -93,7 +98,10 @@ def main(ensemble_folder, data_file, leave_out, plot_cm, majority=False):
     if majority:
         yPred = majority_votes(classifiers, specs, specsToTestData, len(yTest), np.unique(yTest))
     else:
-        yPred = probability_votes(classifiers, specs, specsToTestData, len(yTest), np.unique(yTest))
+        yPred  = probability_votes(classifiers, specs, specsToTestData, len(yTest), np.unique(yTest))
+        yProba = probability_scores(classifiers, specs, specsToTestData, len(yTest), np.unique(yTest))
+        topKScore = topKAccuracy(yProba, yTest, k, classifiers[0].classes_)
+        print "Top k accuracy for k = " + str(k) + ": " + str(topKScore)
     score = metrics.accuracy_score(yTest, yPred)
     print "Test Accuracy:", score
 
@@ -110,6 +118,7 @@ parser.add_argument('--data-file', default='bcmnw.npz', help='Data file')
 parser.add_argument('--majority', action='store_true', help='Use majority voting')
 parser.add_argument('--leave-out', type=int, default=3, help='Index of person to leave out')
 parser.add_argument('--disable-cm', dest='plot_cm', action='store_false', help='Do not plot a confusion matrix')
+parser.add_argument('--k', type=int, default=2, help='Value of k for top-k accuracy reporting')
 
 if __name__ == '__main__':
     namespace = parser.parse_args()
