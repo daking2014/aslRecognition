@@ -21,10 +21,10 @@ def smartResize(img, sidelen, value):
         imethod = cv2.INTER_AREA
     else:
         imethod = cv2.INTER_LINEAR
-    return cv2.resize(padded,(sidelen, sidelen), interpolation=imethod) 
+    return cv2.resize(padded,(sidelen, sidelen), interpolation=imethod)
 
 def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=None):
-    
+
     color_data = []
     depth_data = []
     label_data = []
@@ -37,11 +37,11 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
                 continue
 
             found = 0
-            for i in itertools.count(2,10):
+            for i in xrange(2, 1000, 10):
                 color_path = os.path.join(datadir, person, letter, "color_{}_{:04}.png".format(li, i))
                 depth_path = os.path.join(datadir, person, letter, "depth_{}_{:04}.png".format(li, i))
                 if not (os.path.isfile(color_path) and os.path.isfile(depth_path)):
-                    break
+                    continue
 
                 found += 1
 
