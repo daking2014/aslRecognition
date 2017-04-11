@@ -1,0 +1,23 @@
+Linear SVM on Depth@0.3 and Gabor:
+    Training accuracy = 0.9998
+    Test accuracy = 0.7334
+    Top-2 accuracy = 0.8727
+
+Logistic Regression on Depth@0.3 and Gabor:
+    Training accuracy = 1.0
+    Test accuracy = 0.6807
+    Top-2 accuracy = 0.8080
+
+RBF SVM on Depth@0.3 and Gabor:
+    Training accuracy = 1.0
+    Test accuracy = 0.7402
+    Top-2 accuracy = 0.8727
+
+Ensemble 1 of LinearDepth03Gabor, LogRegDepth03Gabor, and RBFDepth03Gabor with probability voting:
+    Training accuracy = 1.0
+    Test accuracy = 0.7206
+    Top-2 accuracy = 0.8517
+
+Ensemble 1 of LinearDepth03Gabor, LogRegDepth03Gabor, and RBFDepth03Gabor with majority voting:
+    Training accuracy = 1.0
+    Test accuracy = 0.7364
