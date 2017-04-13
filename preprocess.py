@@ -5,6 +5,7 @@ import argparse
 import itertools
 import subprocess
 import matplotlib.cm as cm
+import sys
 
 def padTo(img, w,h, value):
     ih,iw = img.shape[:2]
@@ -23,8 +24,13 @@ def smartResize(img, sidelen, value):
         imethod = cv2.INTER_LINEAR
     return cv2.resize(padded,(sidelen, sidelen), interpolation=imethod)
 
-def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=None):
+def preprocess(datadir, outfile, letters, overfeat=None):
 
+    tmpdir="tmpdata"
+    if overfeat is not None:
+        tmpdir = tmpdir + "_overfeat"
+    if not os.path.isdir(tmpdir):
+        os.makedirs(tmpdir)
     color_data = []
     depth_data = []
     label_data = []
@@ -45,6 +51,15 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
 
                 found += 1
 
+                label_data.append(li)
+                person_data.append(pi)
+
+                color_save_path = os.path.join(tmpdir, "{}_{}_{}_c.npy".format(person, letter, i))
+                depth_save_path = os.path.join(tmpdir, "{}_{}_{}_d.npy".format(person, letter, i))
+                if (os.path.isfile(color_save_path) and os.path.isfile(depth_save_path)):
+                    # Already processed this one
+                    continue
+
                 img = cv2.imread(color_path,cv2.IMREAD_COLOR)
                 bandless_img = img[:-1]/2 + img[1:]/2
                 bandless_img = bandless_img.astype('float') / 255.0
@@ -60,7 +75,7 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
                     cv2.imwrite('tmp_img.png',bandless_resize)
                     output = subprocess.check_output([overfeat,'-f','tmp_img.png'], universal_newlines=True)
                     feats = np.fromstring(output.split('\n')[1], sep=" ")
-                    color_data.append(feats)
+                    np.save(color_save_path, feats)
 
                     depthcolor = (cm.get_cmap('gist_heat')(fixdepth)[:,:,:3]*255)[:,:,::-1]
                     depthcolor[~depthmask]=np.array([22,45,18])
@@ -68,18 +83,35 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
                     cv2.imwrite('tmp_img.png',depthcolor_resize)
                     output = subprocess.check_output([overfeat,'-f','tmp_img.png'], universal_newlines=True)
                     feats = np.fromstring(output.split('\n')[1], sep=" ")
-                    depth_data.append(feats)
+                    np.save(depth_save_path, feats)
 
                 else:
                     bandless_resize = smartResize(bandless_img, 128, (1,1,1))
-                    color_data.append(bandless_resize.flatten())
+                    np.save(color_save_path, bandless_resize.flatten())
                     fixdepth_resize = smartResize(fixdepth, 128, 0)
-                    depth_data.append(fixdepth_resize.flatten())
-
-                label_data.append(li)
-                person_data.append(pi)
+                    np.save(depth_save_path, fixdepth_resize.flatten())
 
             print "Processed {} {}: {} examples".format(person, letter, found)
+
+    for pi, person in enumerate("ABCDE"):
+        for letter in "abcdefghiklmnopqrstuvwxy":
+            li = ord(letter)-ord("a")
+            if letter not in letters:
+                continue
+
+            print "Loading ", person, letter, ":",
+
+            found = 0
+            for i in xrange(2, 1000, 10):
+                color_save_path = os.path.join(tmpdir, "{}_{}_{}_c.npy".format(person, letter, i))
+                depth_save_path = os.path.join(tmpdir, "{}_{}_{}_d.npy".format(person, letter, i))
+                if (os.path.isfile(color_save_path) and os.path.isfile(depth_save_path)):
+                    print ".",
+                    sys.stdout.flush()
+                    color_data.append(np.load(color_save_path))
+                    depth_data.append(np.load(depth_save_path))
+
+            print ""
 
     color_data = np.stack(color_data)
     depth_data = np.stack(depth_data)
@@ -96,7 +128,7 @@ def preprocess(datadir, outfile, letters="abcdefghiklmnopqrstuvwxy", overfeat=No
 parser = argparse.ArgumentParser(description='Preprocess ASL images')
 parser.add_argument('datadir', help='Dataset directory')
 parser.add_argument('outfile', help='Output file')
-parser.add_argument('--letters', help='Letters to include')
+parser.add_argument('--letters', default="abcdefghiklmnopqrstuvwxy", help='Letters to include')
 parser.add_argument('--overfeat', help='Path to overfeat')
 
 if __name__ == '__main__':
