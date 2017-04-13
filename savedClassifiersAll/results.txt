@@ -13,6 +13,21 @@ RBF SVM on Depth@0.3 and Gabor:
     Test accuracy = 0.7402
     Top-2 accuracy = 0.8727
 
+Linear SVM on OverFeat depth:
+    Training accuracy = 1.0
+    Test accuracy = 0.6943
+    Top-2 accuracy = 0.8614
+
+RBF SVM on OverFeat depth:
+    Training accuracy = 1.0
+    Test accuracy = 0.7116
+    Top-2 accuracy = 0.8599
+
+LogReg on OverFeat depth:
+    Training accuracy = 
+    Test accuracy = 
+    Top-2 accuracy =
+
 Ensemble 1 of LinearDepth03Gabor, LogRegDepth03Gabor, and RBFDepth03Gabor with probability voting:
     Training accuracy = 1.0
     Test accuracy = 0.7206
