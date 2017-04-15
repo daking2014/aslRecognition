@@ -41,3 +41,8 @@ Ensemble 2 of LinearDepth03Gabor, RBFDepth03Gabor, LinearSVMOFDepth, RBFSVMOFDep
     Training accuracy = 1.0
     Test accuracy = 0.7846
     Top-2 accuracy = 0.9277
+
+Ensemble 3 of all:
+    Training accuracy = 1.0
+    Test accuracy = 0.7756
+    Top-2 accuracy = 0.9096
